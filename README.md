@@ -1,1 +1,1 @@
-Melakukan Image Generation dari Teks (Text-to-Image, Menyempurnakan Gambar Melalui Image-to-Image, dan Membuat Interface dengan Streamlit
+Melakukan image generation dari teks (Text-to-Image), menyempurnakan gambar melalui Image-to-Image, dan membuat interface dengan Streamlit
