@@ -1,0 +1,33 @@
+version: '3.8'
+# Stack monitoring untuk Kriteria 4 Advance.
+# - exporter Prometheus custom (port 8000)
+# - Prometheus (port 9090) -- scrape exporter + MLflow serve
+# - Grafana (port 3000) -- visualisasi + alerting
+#
+# Jalankan: docker compose up -d
+# Sebelum start, pastikan mlflow models serve sudah jalan di port 5001
+# di host (akses lewat host.docker.internal).
+services:
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: prometheus
+    ports: ['9090:9090']
+    volumes:
+      - ./2.prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: grafana
+    ports: ['3000:3000']
+    environment:
+      GF_SECURITY_ADMIN_USER: septyandy08
+      GF_SECURITY_ADMIN_PASSWORD: septyandy08
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  grafana-data:

@@ -1,0 +1,48 @@
+name: Automated Preprocessing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'personality_raw/**'
+      - 'preprocessing/automate_Muhammad-Rizqy-Septyandy.py'
+      - '.github/workflows/preprocess.yml'
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.7'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas==2.2.2 scikit-learn==1.5.1 joblib==1.4.2 numpy==1.26.4
+
+      - name: Run automated preprocessing
+        working-directory: preprocessing
+        run: |
+          python automate_Muhammad-Rizqy-Septyandy.py \
+            --input ../personality_raw/personality_dataset.csv \
+            --output ./personality_preprocessing
+
+      - name: Upload preprocessed dataset as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: personality_preprocessing
+          path: preprocessing/personality_preprocessing/
+
+      - name: Commit preprocessed dataset back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add preprocessing/personality_preprocessing/
+          git diff --staged --quiet || git commit -m "ci: auto preprocess dataset [skip ci]"
+          git push

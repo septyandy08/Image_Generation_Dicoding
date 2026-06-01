@@ -1,0 +1,9 @@
+https://github.com/septyandy08/Eksperimen_SML_Muhammad-Rizqy-Septyandy
+
+Struktur repository (Advance):
+  .github/workflows/preprocess.yml   - GitHub Actions otomatisasi preprocessing
+  personality_raw/                    - Dataset mentah
+  preprocessing/
+    Eksperimen_Muhammad-Rizqy-Septyandy.ipynb  - Notebook eksperimen
+    automate_Muhammad-Rizqy-Septyandy.py       - Script otomatisasi
+    personality_preprocessing/                  - Output preprocessing

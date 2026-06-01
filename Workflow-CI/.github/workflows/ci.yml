@@ -1,0 +1,89 @@
+name: MLflow CI Training
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  train-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_IMAGE_NAME: septyandy08/smsml-personality
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.7'
+
+      - name: Install MLflow and training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mlflow==2.19.0 scikit-learn==1.5.1 pandas==2.2.2 \
+                      numpy==1.26.4 joblib==1.4.2 matplotlib==3.9.2
+
+      - name: Run MLflow Project (training)
+        working-directory: MLProject
+        run: |
+          mlflow run . --env-manager=local \
+            -P data_dir=personality_preprocessing \
+            -P n_estimators=300 \
+            -P max_depth=12
+
+      - name: Upload MLflow artifacts to GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-artifacts
+          path: |
+            MLProject/mlruns/
+            MLProject/artifacts/
+
+      - name: Commit mlruns back to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add MLProject/mlruns/ MLProject/artifacts/ || true
+          git diff --staged --quiet || git commit -m "ci: training artifacts [skip ci]"
+          git push || echo "nothing to push"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Find latest MLflow run ID
+        id: runid
+        working-directory: MLProject
+        run: |
+          RUN_ID=$(ls -t mlruns/*/ | grep -v "meta.yaml\|trash" | head -1 | xargs -I{} ls -t mlruns/*/{} 2>/dev/null | head -1 || true)
+          # Fallback: ambil run terbaru via mlflow CLI
+          RUN_ID=$(python -c "
+          import mlflow, os
+          mlflow.set_tracking_uri('file:./mlruns')
+          client = mlflow.tracking.MlflowClient()
+          exp = client.get_experiment_by_name('Personality-CI')
+          runs = client.search_runs([exp.experiment_id], order_by=['start_time DESC'])
+          print(runs[0].info.run_id)
+          ")
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Latest MLflow run id: $RUN_ID"
+
+      - name: Build Docker image with mlflow build-docker
+        working-directory: MLProject
+        run: |
+          mlflow models build-docker \
+            --model-uri "runs:/${{ steps.runid.outputs.run_id }}/model" \
+            --name "$DOCKER_IMAGE_NAME:latest"
+
+      - name: Tag and push image to Docker Hub
+        run: |
+          docker tag "$DOCKER_IMAGE_NAME:latest" "$DOCKER_IMAGE_NAME:${{ github.sha }}"
+          docker push "$DOCKER_IMAGE_NAME:latest"
+          docker push "$DOCKER_IMAGE_NAME:${{ github.sha }}"

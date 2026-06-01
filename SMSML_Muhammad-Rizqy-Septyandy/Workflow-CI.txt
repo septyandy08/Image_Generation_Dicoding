@@ -1,0 +1,12 @@
+https://github.com/septyandy08/Workflow-CI
+
+Docker Hub: https://hub.docker.com/r/septyandy08/smsml-personality
+
+Struktur repository (Advance):
+  .github/workflows/ci.yml           - GitHub Actions CI
+  MLProject/
+    MLProject                         - Definisi MLflow Project
+    conda.yaml                        - Conda env
+    modelling.py                      - Training entry point
+    personality_preprocessing/        - Dataset siap latih
+  DockerHub.txt                       - Tautan Docker Hub image
