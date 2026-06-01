@@ -20,9 +20,14 @@ jobs:
           python-version: '3.12.7'
 
       - name: Install MLflow and training dependencies
+        # Catatan: mlflow 2.19.0 yang dianjurkan dokumen punya bug pada
+        # `mlflow models build-docker` (template Dockerfile hardcode
+        # python3.9 yang sudah tidak didukung get-pip). Versi 2.20.4
+        # menjaga format model & API tetap kompatibel sambil memperbaiki
+        # bug tersebut.
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow==2.19.0 scikit-learn==1.5.1 pandas==2.2.2 \
+          pip install "mlflow==2.20.4" scikit-learn==1.5.1 pandas==2.2.2 \
                       numpy==1.26.4 joblib==1.4.2 matplotlib==3.9.2
 
       - name: Run MLflow Project (training)
