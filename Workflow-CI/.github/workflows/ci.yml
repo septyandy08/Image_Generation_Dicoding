@@ -81,12 +81,25 @@ jobs:
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "Latest MLflow run id: $RUN_ID"
 
-      - name: Build Docker image with mlflow build-docker
+      - name: Generate Dockerfile and patch Python 3.9 get-pip bug
+        # mlflow 2.19/2.20 menulis Dockerfile yang hardcode python3.9 +
+        # mengambil get-pip.py dari URL utama, padahal URL itu sudah
+        # tidak mendukung Python 3.9. Solusi: regenerate Dockerfile,
+        # rewrite URL ke legacy endpoint sebelum docker build.
         working-directory: MLProject
         run: |
-          mlflow models build-docker \
+          mlflow models generate-dockerfile \
             --model-uri "runs:/${{ steps.runid.outputs.run_id }}/model" \
-            --name "$DOCKER_IMAGE_NAME:latest"
+            --output-directory ./docker_context
+          sed -i 's|bootstrap.pypa.io/get-pip.py|bootstrap.pypa.io/pip/3.9/get-pip.py|g' \
+            docker_context/Dockerfile
+          echo "=== Patched Dockerfile (first 30 lines) ==="
+          head -30 docker_context/Dockerfile
+
+      - name: Build Docker image
+        working-directory: MLProject/docker_context
+        run: |
+          docker build -t "$DOCKER_IMAGE_NAME:latest" .
 
       - name: Tag and push image to Docker Hub
         run: |
