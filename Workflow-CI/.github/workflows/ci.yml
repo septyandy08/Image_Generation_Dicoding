@@ -29,6 +29,7 @@ jobs:
         working-directory: MLProject
         run: |
           mlflow run . --env-manager=local \
+            --experiment-name "Personality-CI" \
             -P data_dir=personality_preprocessing \
             -P n_estimators=300 \
             -P max_depth=12
@@ -40,14 +41,6 @@ jobs:
           path: |
             MLProject/mlruns/
             MLProject/artifacts/
-
-      - name: Commit mlruns back to repository
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add MLProject/mlruns/ MLProject/artifacts/ || true
-          git diff --staged --quiet || git commit -m "ci: training artifacts [skip ci]"
-          git push || echo "nothing to push"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -62,16 +55,24 @@ jobs:
         id: runid
         working-directory: MLProject
         run: |
-          RUN_ID=$(ls -t mlruns/*/ | grep -v "meta.yaml\|trash" | head -1 | xargs -I{} ls -t mlruns/*/{} 2>/dev/null | head -1 || true)
-          # Fallback: ambil run terbaru via mlflow CLI
-          RUN_ID=$(python -c "
-          import mlflow, os
-          mlflow.set_tracking_uri('file:./mlruns')
+          RUN_ID=$(python <<'PY'
+          import mlflow
+          mlflow.set_tracking_uri("file:./mlruns")
           client = mlflow.tracking.MlflowClient()
-          exp = client.get_experiment_by_name('Personality-CI')
-          runs = client.search_runs([exp.experiment_id], order_by=['start_time DESC'])
-          print(runs[0].info.run_id)
-          ")
+          all_runs = []
+          for exp in client.search_experiments():
+              all_runs.extend(
+                  client.search_runs(
+                      [exp.experiment_id],
+                      order_by=["attributes.start_time DESC"],
+                      max_results=1,
+                  )
+              )
+          all_runs.sort(key=lambda r: r.info.start_time, reverse=True)
+          assert all_runs, "Tidak ada MLflow run yang ditemukan di ./mlruns"
+          print(all_runs[0].info.run_id)
+          PY
+          )
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "Latest MLflow run id: $RUN_ID"
 
