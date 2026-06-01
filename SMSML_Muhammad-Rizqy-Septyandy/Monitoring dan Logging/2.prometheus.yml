@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'smsml_personality_exporter'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+        labels:
+          service: 'smsml-personality'
+          owner: 'septyandy08'
+
+  - job_name: 'mlflow_serve'
+    static_configs:
+      - targets: ['host.docker.internal:5001']
+        labels:
+          service: 'mlflow-model-serve'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - 'alert_rules.yml'

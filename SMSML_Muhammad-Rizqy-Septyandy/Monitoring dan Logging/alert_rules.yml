@@ -1,0 +1,35 @@
+# Alert rules untuk Prometheus -> Grafana
+# 3 alerting (sesuai Advance Kriteria 4)
+groups:
+  - name: smsml_personality_alerts
+    interval: 10s
+    rules:
+      - alert: HighInferenceLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(inference_latency_seconds_bucket[1m]))) > 1
+        for: 30s
+        labels:
+          severity: warning
+          owner: septyandy08
+        annotations:
+          summary: "Latency inferensi p95 > 1 detik"
+          description: "Model serving SMSML Personality mengalami latency p95 > 1s selama 30 detik."
+
+      - alert: HighErrorRate
+        expr: (sum(rate(inference_errors_total[1m])) / clamp_min(sum(rate(inference_requests_total[1m])), 0.001)) > 0.1
+        for: 30s
+        labels:
+          severity: critical
+          owner: septyandy08
+        annotations:
+          summary: "Error rate inferensi > 10%"
+          description: "Rasio error inferensi melebihi 10% dalam 1 menit terakhir."
+
+      - alert: ModelServingDown
+        expr: model_loaded == 0
+        for: 30s
+        labels:
+          severity: critical
+          owner: septyandy08
+        annotations:
+          summary: "Endpoint model serving tidak responsif"
+          description: "Prometheus exporter melaporkan model_loaded=0 selama 30 detik (endpoint MLflow serve down)."

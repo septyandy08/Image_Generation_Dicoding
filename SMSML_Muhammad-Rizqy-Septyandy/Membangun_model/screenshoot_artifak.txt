@@ -1,0 +1,8 @@
+[PLACEHOLDER] Ganti file ini dengan screenshoot_artifak.jpg
+yang menunjukkan tab Artifacts pada run DagsHub berisi:
+- model/
+- confusion_matrix.png
+- roc_curve.png
+- feature_importance.csv
+- classification_report.json
+- best_model.joblib

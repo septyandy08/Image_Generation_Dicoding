@@ -1,0 +1,3 @@
+https://hub.docker.com/r/septyandy08/smsml-personality
+Image: septyandy08/smsml-personality:latest
+Build via: mlflow models build-docker --model-uri runs:/<RUN_ID>/model --name septyandy08/smsml-personality:latest
