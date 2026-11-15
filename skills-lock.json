@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "skills": {
+    "powerpoint-ppt": {
+      "source": "bg-szy/TOP-SKILLS",
+      "sourceType": "github",
+      "skillPath": "skills/agent-skills/powerpoint-ppt/SKILL.md",
+      "computedHash": "fd2d06b93c540801d33ee86435621476cc3cd6f90d17ba6f3b3ac272f03abe5a"
+    }
+  }
+}
